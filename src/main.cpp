@@ -99,10 +99,17 @@ int main(int argc, char **argv) {
     // Open COM port
     ROS_INFO("Open %s", devname.c_str());
 
-    fdc = open(devname.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (fdc < 0) {
-        ROS_ERROR("could not open %s\n", devname.c_str());
-        return -1;
+    for (int cnt = 0; cnt < 10; cnt++) {
+        ROS_INFO("Opening device..");
+        fdc = open(devname.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+        if (fdc < 0) {
+            ROS_ERROR("could not open %s\n", devname.c_str());
+            if (cnt >= 9) {
+                return -1;
+            } else {
+                ros::Duration(0.5).sleep();
+            }
+        }
     }
 
     // Obtain sampling rate
