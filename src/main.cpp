@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
 
     ros::ServiceServer service = n.advertiseService("tare", offsetRequest);
     ros::Publisher pub = n.advertise<geometry_msgs::WrenchStamped>("force", 1000);
+    ros::Publisher pub_SI = n.advertise<geometry_msgs::WrenchStamped>("force_SI", 1000);
 
     ros::AsyncSpinner spinner(2); // Use 2 threads
     spinner.start();
@@ -129,6 +130,7 @@ int main(int argc, char **argv) {
         unsigned short data[6];
 
         geometry_msgs::WrenchStamped msg;
+        geometry_msgs::WrenchStamped msg_SI;
 
         std::unique_lock<std::mutex> lock(m_);
         if (offset_reset_ <= 0){
@@ -165,7 +167,20 @@ int main(int argc, char **argv) {
             msg.wrench.torque.y = (data[4]-8192)/1000.0;
             msg.wrench.torque.z = (data[5]-8192)/1000.0;
 
+            // same topic in SI units
+            msg_SI.header.frame_id = msg.header.frame_id;
+            msg_SI.header.stamp = msg.header.stamp;
+            msg_SI.header.seq = msg.header.seq;
+            msg_SI.wrench.force.x = (data[0]-8192)/31.0;
+            msg_SI.wrench.force.y = (data[1]-8192)/31.0;
+            msg_SI.wrench.force.z = (data[2]-8192)/31.0;
+            msg_SI.wrench.torque.x = (data[3]-8192)/655.0;
+            msg_SI.wrench.torque.y = (data[4]-8192)/655.0;
+            msg_SI.wrench.torque.z = (data[5]-8192)/655.0;
+
             pub.publish(msg);
+
+            pub_SI.publish(msg_SI);
         } else {
             // Request for offset reset
             write(fdc, "O", 1);
